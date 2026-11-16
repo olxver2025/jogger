@@ -1,0 +1,41 @@
+{
+  "name": "jogger",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local multi-agent coding workbench: run Claude Code, Codex and more side by side, and let them message each other.",
+  "type": "module",
+  "bin": {
+    "jogger": "./bin/jogger.mjs"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev": "node bin/dev.mjs",
+    "start": "node bin/jogger.mjs start",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.325",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "croner": "^11.0.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
+    "ws": "^8.23.0",
+    "zod": "^4.6.7",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/ws": "^8.18.2",
+    "@vitejs/plugin-react": "^6.3.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  }
+}
