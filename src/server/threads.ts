@@ -282,7 +282,7 @@ export class ThreadManager {
       let text = item.text;
       if (item.origin.kind === 'agent') {
         text =
-          `[Message from agent @${item.origin.handle} via Jogger${item.origin.mode === 'ask' ? '. They are waiting for your answer: your final message this turn is sent back to them' : ''}]\n\n` +
+          `[Message from agent @${item.origin.handle} via Jogger${item.origin.mode === 'ask' ? '. They are waiting for your answer: your final message this turn is sent back to them' : ''}. Images or files you generate this turn are delivered to them automatically; do not save, copy or re-encode them yourself]\n\n` +
           text;
       } else if (item.origin.kind === 'reply') {
         text = `[Reply from agent @${item.origin.handle} to your earlier message]\n\n` + text;

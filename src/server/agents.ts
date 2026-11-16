@@ -44,6 +44,8 @@ export class AgentRouter {
       `- share_file attaches a file you made so the user and other agents see it.`,
       `- memory_list / memory_read / memory_write hold notes shared by every agent in this project. Check memory when you start on something unfamiliar, and save durable facts (decisions, conventions, where things are) as you learn them.`,
       `Messages from other agents are marked "[Message from agent @name via Jogger]". Your final message in that turn is the reply.`,
+      `Files you create with built-in tools (for example generated images) are captured by Jogger and delivered to the asker automatically. Never re-encode, base64-dump or copy them by hand, and don't generate the same thing twice; one result is enough unless more were requested. For other files you write, call share_file once.`,
+      `When you ask another agent, describe the outcome you need; don't tell it how or where to save files. Pass save_to on ask_agent if you want returned files copied into your project.`,
     ].join('\n');
   }
 
@@ -339,7 +341,7 @@ export class AgentRouter {
       'ask_agent',
       {
         description:
-          'Ask another agent to do something and wait for its answer. Returns its final message plus any files it produced (images are included inline). "to" is an agent handle like "codex" or "artist", a persona handle, or a provider id to start a helper.',
+          'Ask another agent to do something and wait for its answer. Returns its final message plus any files it produced (images are included inline) automatically — do not ask it to save or send files. Use save_to to copy returned files into your project. "to" is an agent handle like "codex" or "artist", a persona handle, or a provider id to start a helper.',
         inputSchema: {
           to: z.string().describe('Agent handle (e.g. "codex"), persona handle (e.g. "artist"), or provider id'),
           message: z.string().describe('What you need. Be specific; the other agent has none of your context.'),

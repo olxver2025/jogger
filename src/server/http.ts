@@ -90,7 +90,8 @@ export function createHttpServer(app: App) {
 
       if (p === '/healthz') return send(res, 200, { ok: true, version: app.version });
 
-      if (!p.startsWith('/api/')) {
+      if (!p.startsWith('/api/') || p === '/api/auth') {
+        // /?token=… (daemon port) and /api/auth?token=… (through the Vite dev proxy) set the session cookie.
         const t = url.searchParams.get('token');
         if (t && safeEqual(t, config.token)) {
           res

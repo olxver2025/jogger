@@ -5,7 +5,7 @@ import { promisify } from 'node:util';
 import type { ApprovalMode, ToolKind } from '../../shared/protocol.js';
 import type { AgentSession, ProviderAdapter, SessionOptions, UserInput } from './types.js';
 import { truncate } from './types.js';
-import { which } from '../util.js';
+import { slug, which } from '../util.js';
 
 // Talks to `codex app-server` over stdio JSON-RPC. One child process serves every Codex
 // thread; each thread gets its own Jogger MCP token through the per-thread config override.
@@ -433,10 +433,11 @@ class CodexSession implements AgentSession {
         });
         if (done && item.status === 'completed') {
           try {
-            const name = `image-${item.id.slice(-8)}.png`;
+            const ext = item.savedPath?.split('.').pop() || 'png';
+            const name = `${slug(item.revisedPrompt ?? 'image', 40)}-${item.id.slice(-4)}.${ext}`;
             const att =
               item.savedPath && fs.existsSync(item.savedPath)
-                ? await this.opts.saveAttachment({ path: item.savedPath, name: item.savedPath.split('/').pop() ?? name })
+                ? await this.opts.saveAttachment({ path: item.savedPath, name })
                 : await this.opts.saveAttachment({ data: Buffer.from(item.result, 'base64'), name, mime: 'image/png' });
             emit({ type: 'attachment', attachment: att });
           } catch (err) {
