@@ -322,7 +322,11 @@ async function api(
     return ok(providers);
   }
 
-  if (a === 'telegram' && b === 'test' && m === 'POST') return ok(await app.telegram.test());
+  if (a === 'telegram' && b === 'test' && m === 'POST') {
+    const body = await json<{ botToken?: string }>();
+    const token = body.botToken && !body.botToken.startsWith('••••') ? body.botToken : undefined;
+    return ok(await app.telegram.test(token));
+  }
 
   // Folder suggestions for the "add project" box.
   if (a === 'fs' && b === 'dirs' && m === 'GET') {

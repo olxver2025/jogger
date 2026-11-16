@@ -1,0 +1,366 @@
+/* Shell: sidebar, pane grid, pane chrome, and the shared "page" layout used by Settings and Schedules. */
+
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
+  transition: grid-template-columns var(--dur-slow) var(--ease);
+}
+.shell.no-sidebar {
+  grid-template-columns: 0 minmax(0, 1fr);
+}
+
+/* ------------------------------------------------------------------ main + background */
+
+.main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background-color: var(--bg);
+}
+:root[data-bg='grid'] .main {
+  background-image:
+    linear-gradient(var(--grid-line-major) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line-major) 1px, transparent 1px),
+    linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size:
+    120px 120px,
+    120px 120px,
+    24px 24px,
+    24px 24px;
+  background-position: -1px -1px;
+}
+:root[data-bg='dots'] .main {
+  background-image: radial-gradient(circle at center, var(--grid-line-major) 1px, transparent 1.4px);
+  background-size: 16px 16px;
+}
+
+.panes {
+  flex: 1;
+  display: grid;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+.no-sidebar .panes {
+  padding-left: var(--sp-2);
+}
+.panes[data-n='2'] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.panes[data-n='3'],
+.panes[data-n='4'] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+.panes[data-n='3'] > .pane:first-child {
+  grid-row: span 2;
+}
+
+.pane {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow:
+    0 0 0 1px var(--border),
+    0 1px 2px color-mix(in oklch, var(--text) 4%, transparent);
+  animation: pop var(--dur) var(--ease);
+}
+.pane::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px transparent;
+  transition: box-shadow var(--dur) var(--ease);
+}
+.panes:not([data-n='1']) > .pane.is-focused::after {
+  box-shadow:
+    inset 0 0 0 1px var(--accent-line),
+    inset 0 2px 0 0 var(--accent);
+}
+
+/* ------------------------------------------------------------------ pane header */
+
+.pane-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  padding: var(--sp-1) var(--sp-2) var(--sp-1) var(--sp-3);
+  border-bottom: 1px solid var(--border);
+  flex: none;
+  min-width: 0;
+}
+.pane-head-main {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: 1;
+  min-width: 0;
+}
+.pane-head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex: none;
+}
+.pane-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.pane-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ------------------------------------------------------------------ page layout (settings, schedules, forms) */
+
+.page-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--sp-5) var(--pane-pad) var(--sp-7);
+}
+.page-narrow {
+  max-width: 620px;
+}
+.page-h1 {
+  font-size: var(--fs-xl);
+  margin-bottom: var(--sp-1);
+}
+.page-lede {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  max-width: 60ch;
+}
+.section + .section {
+  margin-top: var(--sp-6);
+}
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-3);
+}
+.section-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+}
+.section-desc {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  margin-top: 2px;
+  max-width: 62ch;
+}
+
+/* a label-left / control-right settings row */
+.setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-3) 0;
+  border-top: 1px solid var(--border);
+}
+.setting:first-child {
+  border-top: 0;
+}
+.setting-text {
+  min-width: 0;
+}
+.setting-label {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+.setting-desc {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  margin-top: 1px;
+  max-width: 56ch;
+  text-wrap: pretty;
+}
+.setting-control {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* bordered list of rows */
+.list {
+  border-radius: var(--r-lg);
+  box-shadow: inset 0 0 0 1px var(--border);
+  background: var(--surface);
+  overflow: hidden;
+}
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 40px;
+  padding: var(--sp-2) var(--sp-3);
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-sm);
+  width: 100%;
+  text-align: left;
+}
+.list-row:first-child {
+  border-top: 0;
+}
+button.list-row:hover,
+.list-row.is-clickable:hover {
+  background: var(--hover);
+}
+.list-row.is-selected {
+  background: var(--accent-soft);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3) var(--sp-4);
+}
+.form-grid > .span-2 {
+  grid-column: 1 / -1;
+}
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-4);
+}
+.form-actions .spacer {
+  flex: 1;
+}
+
+/* ------------------------------------------------------------------ banners */
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: var(--sp-2) var(--sp-2) 0;
+  padding: var(--sp-1) var(--sp-1) var(--sp-1) var(--sp-3);
+  min-height: 34px;
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  background: var(--warn-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--warn) 35%, transparent);
+  animation: enter var(--dur) var(--ease);
+}
+.banner svg {
+  color: var(--warn-ink);
+  flex: none;
+}
+.banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* full-screen boot states */
+.boot {
+  display: grid;
+  place-items: center;
+  height: 100vh;
+  height: 100dvh;
+  padding: var(--sp-4);
+}
+.boot-card {
+  max-width: 440px;
+  display: grid;
+  gap: var(--sp-3);
+}
+.boot-card h1 {
+  font-size: var(--fs-xl);
+}
+.boot-card p {
+  color: var(--text-muted);
+}
+.boot-card code {
+  padding: 1px 5px;
+  border-radius: var(--r-xs);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* lightbox */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-6);
+  background: var(--scrim);
+  animation: fade-in var(--dur) var(--ease);
+  cursor: zoom-out;
+}
+.lightbox img {
+  max-width: 100%;
+  max-height: calc(100dvh - 120px);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+  background: var(--surface);
+  animation: pop var(--dur) var(--ease);
+}
+.lightbox-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--overlay);
+  cursor: default;
+}
+
+@media (max-width: 720px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .shell .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(var(--sidebar-w), 86vw);
+    z-index: 70;
+    box-shadow: var(--shadow-pop);
+  }
+  .shell.no-sidebar .sidebar {
+    display: none;
+  }
+  .panes[data-n] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-rows: minmax(0, 1fr);
+  }
+  .panes[data-n='3'] > .pane:first-child {
+    grid-row: auto;
+  }
+  .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

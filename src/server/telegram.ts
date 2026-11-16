@@ -63,9 +63,17 @@ export class TelegramBridge {
     await this.start();
   }
 
-  async test(): Promise<{ ok: boolean; botName?: string; error?: string }> {
+  /** Check a bot token (the one typed in the form, or the saved one). */
+  async test(token?: string): Promise<{ ok: boolean; botName?: string; error?: string }> {
     try {
-      const me = await this.call('getMe', {});
+      const me = token
+        ? await fetch(`${this.base}/bot${token}/getMe`, { method: 'POST' })
+            .then((r) => r.json() as Promise<any>)
+            .then((j) => {
+              if (!j.ok) throw new Error(j.description ?? 'Telegram rejected the token');
+              return j.result;
+            })
+        : await this.call('getMe', {});
       return { ok: true, botName: me.username };
     } catch (err) {
       return { ok: false, error: (err as Error).message };

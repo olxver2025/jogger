@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "jogger-preview",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["JOGGER_HOME=/Users/oliver/Documents/jogger/scratch/preview-home", "JOGGER_PORT=4399", "JOGGER_TOKEN=preview-token", "node", "bin/jogger.mjs", "start"],
+      "port": 4399
+    }
+  ]
+}

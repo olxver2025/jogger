@@ -91,7 +91,7 @@ class MockSession implements AgentSession {
   }
 
   async send(input: UserInput) {
-    const turnId = `mock-t${++this.n}`;
+    const turnId = `mock-${Date.now().toString(36)}-${++this.n}`;
     const ac = new AbortController();
     this.abort = ac;
     const started = Date.now();

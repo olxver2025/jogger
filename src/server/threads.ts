@@ -299,8 +299,10 @@ export class ThreadManager {
         this.save(cur);
       }
     } catch (err) {
-      this.append(threadId, { type: 'error', message: (err as Error).message });
-      this.finishTurn(threadId, { status: 'failed', error: (err as Error).message });
+      const message = (err as Error).message;
+      this.append(threadId, { type: 'error', message });
+      this.append(threadId, { type: 'turn.completed', turnId: turn.turnId ?? 'unstarted', status: 'failed', error: message });
+      this.finishTurn(threadId, { status: 'failed', error: message });
       await this.dropSession(threadId);
     }
   }
@@ -407,7 +409,11 @@ export class ThreadManager {
         return;
       case 'closed':
         if (ev.error) this.append(threadId, { type: 'notice', text: `Agent process stopped: ${ev.error}. It will resume on the next message.` });
-        if (this.active.has(threadId)) this.finishTurn(threadId, { status: 'failed', error: ev.error ?? 'session closed' });
+        if (this.active.has(threadId)) {
+          const error = ev.error ?? 'session closed';
+          this.append(threadId, { type: 'turn.completed', turnId: turn?.turnId ?? 'closed', status: 'failed', error });
+          this.finishTurn(threadId, { status: 'failed', error });
+        }
         void this.dropSession(threadId);
         return;
     }
@@ -415,6 +421,11 @@ export class ThreadManager {
 
   private finishTurn(threadId: string, r: { status: TurnResult['status']; error?: string }) {
     const turn = this.active.get(threadId);
+    // Tools the provider never closed (interrupts, crashes) get a final state so the UI stops spinning.
+    for (const tool of this.tools.get(threadId)?.values() ?? []) {
+      if (tool.status === 'running')
+        this.append(threadId, { ...tool, status: 'failed', output: tool.output ?? (r.status === 'interrupted' ? 'Stopped' : 'Did not finish') });
+    }
     this.active.delete(threadId);
     this.tools.delete(threadId);
     // Any approvals still open for this thread are moot now.
@@ -483,10 +494,10 @@ export class ThreadManager {
     const approval: PendingApproval = { requestId, threadId, ...req, createdAt: Date.now() };
     return new Promise((resolve) => {
       this.pending.set(requestId, { approval, resolve });
+      this.broadcastApprovals();
       this.append(threadId, { type: 'approval.request', requestId, ...req });
       t.status = 'waiting';
       this.save(t);
-      this.broadcastApprovals();
     });
   }
 

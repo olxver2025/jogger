@@ -283,7 +283,7 @@ export const DEFAULT_KEYBINDINGS: Record<string, string> = {
   'palette.open': 'mod+k',
   'thread.new': 'mod+shift+o',
   'pane.split': 'mod+\\',
-  'pane.close': 'mod+shift+w',
+  'pane.close': 'mod+alt+w',
   'pane.next': 'mod+]',
   'pane.prev': 'mod+[',
   'thread.interrupt': 'mod+.',
