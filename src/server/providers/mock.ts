@@ -102,7 +102,7 @@ class MockSession implements AgentSession {
       try {
         const text = input.text.trim();
         const ask = text.match(/\b(ask|send)\s+@([\w-]+)\s+([\s\S]+)/i);
-        if (/\bsleep\s+(\d+)/i.test(text)) {
+        if (!ask && /\bsleep\s+(\d+)/i.test(text)) {
           const secs = Number(text.match(/\bsleep\s+(\d+)/i)![1]);
           emit({ type: 'tool', itemId: `${turnId}-sleep`, kind: 'command', name: 'sleep', title: `sleep ${secs}`, status: 'running' });
           await sleep(secs * 1000, ac.signal);

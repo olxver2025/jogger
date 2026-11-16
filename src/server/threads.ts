@@ -210,6 +210,9 @@ export class ThreadManager {
 
   async deleteThread(id: string) {
     await this.interrupt(id).catch(() => {});
+    // Anyone waiting on this thread (queued or running requests) gets an answer now, not at their timeout.
+    this.clearQueue(id);
+    if (this.active.has(id)) this.finishTurn(id, { status: 'interrupted', error: 'the thread was deleted' });
     await this.dropSession(id);
     this.queues.delete(id);
     this.d.store.deleteThread(id);
@@ -423,8 +426,9 @@ export class ThreadManager {
     const turn = this.active.get(threadId);
     // Tools the provider never closed (interrupts, crashes) get a final state so the UI stops spinning.
     for (const tool of this.tools.get(threadId)?.values() ?? []) {
-      if (tool.status === 'running')
-        this.append(threadId, { ...tool, status: 'failed', output: tool.output ?? (r.status === 'interrupted' ? 'Stopped' : 'Did not finish') });
+      if (tool.status !== 'running') continue;
+      if (r.status === 'completed') this.append(threadId, { ...tool, status: 'done' });
+      else this.append(threadId, { ...tool, status: 'failed', output: tool.output ?? (r.status === 'interrupted' ? 'Stopped' : 'Did not finish') });
     }
     this.active.delete(threadId);
     this.tools.delete(threadId);
@@ -459,9 +463,34 @@ export class ThreadManager {
     setImmediate(() => void this.pump(threadId));
   }
 
-  async interrupt(threadId: string) {
+  async interrupt(threadId: string, seen = new Set<string>()) {
+    if (seen.has(threadId)) return;
+    seen.add(threadId);
     const live = this.live.get(threadId);
     for (const [id, p] of this.pending) if (p.approval.threadId === threadId) this.resolveApproval(id, 'deny', 'interrupted');
+    // Stopping an agent also stops the work it is waiting on through ask_agent.
+    const asked = (o: MessageOrigin) => o.kind === 'agent' && o.mode === 'ask' && o.threadId === threadId;
+    for (const [other, q] of this.queues) {
+      const keep: QueueItem[] = [];
+      for (const item of q) {
+        if (!asked(item.origin)) {
+          keep.push(item);
+          continue;
+        }
+        const w = item.ctx.requestId ? this.requestWaiters.get(item.ctx.requestId) : undefined;
+        if (item.ctx.requestId) this.requestWaiters.delete(item.ctx.requestId);
+        w?.({ status: 'interrupted', text: '(stopped before it started)', attachments: [] });
+      }
+      if (keep.length !== q.length) {
+        this.queues.set(other, keep);
+        const t = this.d.store.thread(other);
+        if (t) {
+          t.queued = keep.length;
+          this.save(t);
+        }
+      }
+    }
+    for (const [other, turn] of this.active) if (other !== threadId && asked(turn.origin)) await this.interrupt(other, seen);
     if (live && this.active.has(threadId)) await live.session.interrupt();
   }
 

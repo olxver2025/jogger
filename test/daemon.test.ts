@@ -282,3 +282,50 @@ test('a restarted daemon keeps threads and their provider sessions', async () =>
   assert.ok(second.threads.events(t.id).length >= 4);
   await second.shutdown();
 });
+
+test('stopping an agent also stops the agent it is waiting on', async () => {
+  const boss = await newThread('stopper');
+  const worker = await newThread('slowpoke');
+  await api('POST', `/api/threads/${boss.id}/messages`, { text: 'ask @slowpoke sleep 30' });
+  await waitFor(() => events(worker.id).some((e) => e.type === 'turn.started'));
+  const t0 = Date.now();
+  await api('POST', `/api/threads/${boss.id}/interrupt`);
+  await idleAfter(worker.id, 1);
+  await idleAfter(boss.id, 1);
+  assert.ok(Date.now() - t0 < 5000, 'both stopped promptly');
+  const w = events(worker.id).find((e) => e.type === 'turn.completed') as any;
+  assert.equal(w.status, 'interrupted');
+});
+
+test('deleting a thread answers whoever is waiting on it', async () => {
+  const boss = await newThread('orphaned');
+  const worker = await newThread('doomed');
+  await api('POST', `/api/threads/${boss.id}/messages`, { text: 'ask @doomed sleep 30' });
+  await waitFor(() => events(worker.id).some((e) => e.type === 'turn.started'));
+  const t0 = Date.now();
+  await api('DELETE', `/api/threads/${worker.id}`);
+  await idleAfter(boss.id, 1);
+  assert.ok(Date.now() - t0 < 5000);
+  const reply = events(boss.id).find((e) => e.type === 'agent.reply') as any;
+  assert.equal(reply.ok, false);
+});
+
+test('a thread can run in its own git worktree', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'jogger-repo-'));
+  const git = (...a: string[]) => execFileSync('git', ['-C', repo, ...a], { stdio: 'pipe' });
+  git('init', '-q');
+  const p = await api('POST', '/api/projects', { path: repo, name: 'repo' });
+  // No commits yet: a clear error, no half-made thread.
+  await assert.rejects(api('POST', '/api/threads', { projectId: p.id, provider: 'mock', handle: 'wt0', worktree: true }), /no commits yet/);
+  fs.writeFileSync(path.join(repo, 'a.txt'), 'a');
+  git('add', '.');
+  git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'init');
+  const t = await api<Thread>('POST', '/api/threads', { projectId: p.id, provider: 'mock', handle: 'wt', worktree: true });
+  assert.ok(t.worktree);
+  assert.equal(t.cwd, t.worktree!.path);
+  assert.ok(t.cwd.startsWith(config.worktreesDir));
+  assert.match(t.worktree!.branch, /^jogger\/wt-/);
+  assert.ok(fs.existsSync(path.join(t.cwd, 'a.txt')));
+  assert.match(git('branch', '--list', t.worktree!.branch).toString(), /jogger\/wt-/);
+});

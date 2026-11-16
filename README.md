@@ -14,7 +14,9 @@ thread and project.
 - **Split panes.** Up to four threads at once, with ⌘K command palette, rebindable shortcuts,
   themes, accent colour and personas (Claude, Codex, Artist, Reviewer, or your own).
 - **Per-thread approvals.** Ask, Auto (edits allowed) or Full. Helpers never get more autonomy than
-  the agent that started them.
+  the agent that started them. Messages between agents are allowed without prompting and shown in
+  both threads. An Ask-mode agent can still send work to an existing Full-mode thread, so keep
+  Full for threads you trust with anything.
 - **Optional git worktrees** per thread, so parallel agents don't overwrite each other.
 - **Always on.** A background daemon keeps scheduled tasks (cron) and long turns running when the
   tab is closed. A Telegram bridge lets you message agents and answer approvals from your phone.
